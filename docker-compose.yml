@@ -1,0 +1,138 @@
+networks:
+    toubeelib.net:
+        driver: bridge
+services:
+  # gateway.toubeelib : point d'entrée de l'application utilisant guzzle
+  gateway.toubeelib:
+    build:
+      context: build
+      dockerfile: 8.3-cli.Dockerfile
+    env_file: ./toubeelib.env
+    ports:
+      - '8081:80'
+    volumes:
+      - ./gateway:/var/php
+    working_dir: /var/php
+    depends_on:
+#      - api.toubeelib
+      - praticien.toubeelib
+      - rdv.toubeelib
+    networks:
+      - toubeelib.net
+    command: php -S 0.0.0.0:80 -t public
+
+  # service api.toubeelib : api pour la prise de rdv
+  #
+#  api.toubeelib:
+#  #  image: 'canals/php:8.3-cli'
+#    build:
+#      context: build
+#      dockerfile: 8.3-cli.Dockerfile
+#    env_file: ./toubeelib.env
+#    ports:
+#      - '6080:80'
+#    volumes:
+#      - ./app:/var/php
+#    working_dir: /var/php
+#    networks:
+#      - toubeelib.net
+#    depends_on:
+#      - toubeelib.dbpraticien
+##      - toubeelib.dbrdvs
+##      - toubeelib.dbauth
+#    command: php -S 0.0.0.0:80 -t /var/php/public
+
+  praticien.toubeelib:
+    build:
+      context: build
+      dockerfile: 8.3-cli.Dockerfile
+    env_file: ./toubeelib.env
+    ports:
+      - '6089:80'
+    volumes:
+      - ./app-praticiens:/var/php
+    working_dir: /var/php
+    networks:
+      - toubeelib.net
+    depends_on:
+      - toubeelib.dbpraticien
+      - toubeelib.dbrdvs
+    command: php -S 0.0.0.0:80 -t /var/php/public
+
+  rdv.toubeelib:
+    build:
+      context: build
+      dockerfile: 8.3-cli.Dockerfile
+    env_file: ./toubeelib.env
+    ports:
+      - '6088:80'
+    volumes:
+      - ./app-rdv:/var/php
+    working_dir: /var/php
+    networks:
+      - toubeelib.net
+    depends_on:
+      - toubeelib.dbpraticien
+      - toubeelib.dbrdvs
+    command: php -S 0.0.0.0:80 -t /var/php/public
+
+
+    # service toubeelib.db : base de données postgresql
+  toubeelib.dbpraticien:
+    image: 'postgres:latest'
+    env_file: ./toubeelibdb.env
+    environment:
+      POSTGRES_DB: toubeelib
+    ports:
+      - '5432:5432'
+    networks:
+      - toubeelib.net
+    volumes:
+      - ./app/sql:/docker-entrypoint-initdb.d
+
+  toubeelib.dbrdvs:
+    image: 'postgres:latest'
+    env_file: ./toubeelibdb.env
+    environment:
+      POSTGRES_DB: toubeelib
+    ports:
+      - '5433:5432'
+    networks:
+      - toubeelib.net
+    volumes:
+      - ./app/sql:/var/sql
+
+  #
+  # service administration des bases sql
+  #
+  adminer:
+    image: adminer
+    ports:
+      - '8080:8080'
+    networks:
+      - toubeelib.net
+
+#  toubeelib.dbauth:
+#    image: 'postgres:latest'
+#    env_file: ./toubeelibdb.env
+#    ports:
+#      - '5434:5432'
+#    networks:
+#      - toubeelib.net
+#    volumes:
+#      - ./app/sql:/var/sql
+
+#    depends_on:
+#      - toubeelib.db
+#    command: php -S 0.0.0.0:80 -t /var/php/public
+#
+#    # service toubeelib.db : base de données postgresql
+#  toubeelib.db:
+#    image: 'postgres:latest'
+#    env_file: ./toubeelibdb.env
+#    ports:
+#      - '5432:5432'
+#    networks:
+#      - toubeelib.net
+#    volumes:
+#      - ./app/sql:/var/sql
