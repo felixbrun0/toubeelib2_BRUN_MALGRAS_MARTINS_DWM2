@@ -1,9 +1,9 @@
 <?php
 
-return  [
+use function DI\value;
 
-    'displayErrorDetails' => true,
-    'logs.dir' => __DIR__ . '/../var/logs',
-
-
-    ] ;
+return [
+    'displayErrorDetails' => value(true),
+    'logs.dir' => value(__DIR__ . '/../var/logs'),
+    'auth.service.url' => value('http://auth.toubeelib:80'),
+];

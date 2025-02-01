@@ -1,5 +1,7 @@
 <?php
 
+use DI\ContainerBuilder;
+use apprdv\application\middlewares\AuthorizationMiddleware;
 use Psr\Container\ContainerInterface;
 use apprdv\application\actions\CreateRdvAction;
 use apprdv\application\actions\DeleteRdvAction;
@@ -12,8 +14,18 @@ use apprdv\core\services\praticien\ServicePraticien;
 use apprdv\core\services\rdv\ServiceRdv;
 use apprdv\infrastructure\db\PDOPraticienRepository;
 
-
 return [
+    'settings' => [
+        'jwt_secret' => 'votre_secret_jwt_ici', // À remplacer par votre vrai secret
+        'displayErrorDetails' => true,
+        'logErrors' => true,
+        'logErrorDetails' => true,
+    ],
+
+    AuthorizationMiddleware::class => function (ContainerInterface $c) {
+        $settings = $c->get('settings');
+        return new AuthorizationMiddleware($settings['jwt_secret']);
+    },
 
     'praticien.pdo' => function (ContainerInterface $container) {
         $config = parse_ini_file(__DIR__ . '/config.ini');
@@ -42,7 +54,6 @@ return [
         }
     },
 
-
     'logger.service.praticien' => function(\Psr\Container\ContainerInterface $container) {
         return new ServicePraticien($container->get('logger.praticien'));
     },
@@ -51,7 +62,6 @@ return [
         return new PDOPraticienRepository($container->get('praticien.pdo'));
     },
 
-
     'logger.service.rdv' => function(\Psr\Container\ContainerInterface $container) {
         return new ServiceRdv($container->get('logger.rdv'), $container->get('logger.service.praticien'));
     },
@@ -59,7 +69,6 @@ return [
     'logger.rdv' => function (ContainerInterface $container) {
         return new \apprdv\infrastructure\db\PDORdvRepository($container->get('rdv.pdo'));
     },
-
 
     GetRdvAction::class => function (\Psr\Container\ContainerInterface $container) {
         return new GetRdvAction($container->get('logger.rdv'));
@@ -80,7 +89,7 @@ return [
         return new GetPraticienDispoAction($container->get('logger.rdv'));
     },
     GetRdvsByPraticienAction::class => function (\Psr\Container\ContainerInterface $container) {
-            return new GetRdvsByPraticienAction($container->get('logger.service.rdv'));
+        return new GetRdvsByPraticienAction($container->get('logger.service.rdv'));
     },
     \apprdv\infrastructure\db\PDORdvRepository::class => function (\Psr\Container\ContainerInterface $container) {
         return new \apprdv\infrastructure\db\PDORdvRepository($container->get('rdv.pdo'));

@@ -76,6 +76,21 @@ services:
       - toubeelib.dbrdvs
     command: php -S 0.0.0.0:80 -t /var/php/public
 
+  auth.toubeelib:
+    build:
+      context: build
+      dockerfile: 8.3-cli.Dockerfile
+    env_file: ./toubeelib.env
+    ports:
+      - '6090:80'
+    volumes:
+      - ./app.auth:/var/php
+    working_dir: /var/php
+    networks:
+      - toubeelib.net
+    depends_on:
+      - toubeelib.dbauth
+    command: php -S 0.0.0.0:80 -t /var/php/public
 
     # service toubeelib.db : base de données postgresql
   toubeelib.dbpraticien:
@@ -88,7 +103,7 @@ services:
     networks:
       - toubeelib.net
     volumes:
-      - ./app/sql:/docker-entrypoint-initdb.d
+      - ./app-praticiens/sql:/docker-entrypoint-initdb.d
 
   toubeelib.dbrdvs:
     image: 'postgres:latest'
@@ -97,6 +112,18 @@ services:
       POSTGRES_DB: toubeelib
     ports:
       - '5433:5432'
+    networks:
+      - toubeelib.net
+    volumes:
+      - ./app/sql:/var/sql
+
+  toubeelib.dbauth:
+    image: 'postgres:latest'
+    env_file: ./toubeelibdb.env
+    environment:
+      POSTGRES_DB: auth
+    ports:
+      - '5434:5432'
     networks:
       - toubeelib.net
     volumes:
@@ -111,28 +138,3 @@ services:
       - '8080:8080'
     networks:
       - toubeelib.net
-
-#  toubeelib.dbauth:
-#    image: 'postgres:latest'
-#    env_file: ./toubeelibdb.env
-#    ports:
-#      - '5434:5432'
-#    networks:
-#      - toubeelib.net
-#    volumes:
-#      - ./app/sql:/var/sql
-
-#    depends_on:
-#      - toubeelib.db
-#    command: php -S 0.0.0.0:80 -t /var/php/public
-#
-#    # service toubeelib.db : base de données postgresql
-#  toubeelib.db:
-#    image: 'postgres:latest'
-#    env_file: ./toubeelibdb.env
-#    ports:
-#      - '5432:5432'
-#    networks:
-#      - toubeelib.net
-#    volumes:
-#      - ./app/sql:/var/sql

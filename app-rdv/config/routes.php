@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
-
+use apprdv\application\middlewares\AuthorizationMiddleware;
 
 return function( \Slim\App $app):\Slim\App {
 
@@ -16,31 +16,36 @@ return function( \Slim\App $app):\Slim\App {
     $app->get('/',
         \apprdv\application\actions\HomeAction::class);
 
-    $app->get('/rdvs[/]',
-        \apprdv\application\actions\GetAllRdvsAction::class)
-        ->setName('getAllRdvs');
+    $app->group('/rdvs', function() use ($app) {
+        $app->get('[/]',
+            \apprdv\application\actions\GetAllRdvsAction::class)
+            ->setName('getAllRdvs');
 
-    $app->get('/rdvs/{id}[/]',
-        \apprdv\application\actions\GetRdvAction::class)
-        ->setName('getRdv');
+        $app->get('/{id}[/]',
+            \apprdv\application\actions\GetRdvAction::class)
+            ->setName('getRdv');
 
-    $app->post('/rdvs/create',
-        \apprdv\application\actions\CreateRdvAction::class);
+        $app->post('/create',
+            \apprdv\application\actions\CreateRdvAction::class);
 
-    $app->patch('/rdvs/{id}',
-        \apprdv\application\actions\UpdateRdvAction::class)
-        ->setName('updateRdv');
-        
-    $app->delete('/rdvs/{id}',
-        \apprdv\application\actions\DeleteRdvAction::class)
-        ->setName('deleteRdv');
+        $app->patch('/{id}',
+            \apprdv\application\actions\UpdateRdvAction::class)
+            ->setName('updateRdv');
+            
+        $app->delete('/{id}',
+            \apprdv\application\actions\DeleteRdvAction::class)
+            ->setName('deleteRdv');
+    })->add(AuthorizationMiddleware::class);
 
-    $app->get('/praticiens/{praticienId}/rdvs', 
-        \apprdv\application\actions\GetPraticienDispoAction::class)
-        ->setName('getPraticienDispo');
+    $app->group('/praticiens', function() use ($app) {
+        $app->get('/{praticienId}/rdvs', 
+            \apprdv\application\actions\GetPraticienDispoAction::class)
+            ->setName('getPraticienDispo');
 
-        $app->get('/praticiens/{id}/weeks/{week}',
-        \apprdv\application\actions\GetRdvsByPraticienAction::class)
-        ->setName('getRdvsByPraticien');
+        $app->get('/{id}/weeks/{week}',
+            \apprdv\application\actions\GetRdvsByPraticienAction::class)
+            ->setName('getRdvsByPraticien');
+    })->add(AuthorizationMiddleware::class);
+
     return $app;
 };
